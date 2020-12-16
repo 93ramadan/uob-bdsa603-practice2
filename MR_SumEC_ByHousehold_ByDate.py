@@ -40,24 +40,26 @@ class MR_SumEC_ByHousehold_ByDate(MRJob):
           try:
                # Convert Reading to DateTime
                readingDate_AsDate = pd.to_datetime(readingDate)
+               # Adjust Mid-Night Readings to be for the previous date (last 30-minutes of yesterday)
                if (readingDate_AsDate.time() == datetime.time(0,0)):
                     readingDate_AsDate = readingDate_AsDate - datetime.timedelta(minutes = 1)
           except:
                pass
                #yield (f'InvalidDate_{householdID}'), energyConsumption_AsFloat
           else:
-               try:
-                    # Convert energy consumption to Float
-                    energyConsumption_AsFloat = float(energyConsumption)
-               except:
-                    pass
-                    #yield (f'InvalidReading_{householdID}'), energyConsumption_AsFloat
-               else:
-                    if (self.StudyTimeFrame_StartYear <= readingDate_AsDate.date().year <= self.StudyTimeFrame_EndYear):
-                         yield (householdID, readingDate_AsDate.strftime('%Y-%m-%d')), energyConsumption_AsFloat
-                    else:
+               # Filter out excluded dates (Study Time Frame)
+               if (self.StudyTimeFrame_StartYear <= readingDate_AsDate.date().year <= self.StudyTimeFrame_EndYear):
+                    try:
+                         # Convert energy consumption to Float
+                         energyConsumption_AsFloat = float(energyConsumption)
+                    except:
                          pass
-                         #yield (f'OutofTimeFrame_{householdID}'), energyConsumption_AsFloat
+                         #yield (f'InvalidReading_{householdID}'), energyConsumption_AsFloat
+                    else:
+                         yield (householdID, readingDate_AsDate.strftime('%Y-%m-%d')), energyConsumption_AsFloat
+               else:
+                    pass
+                    #yield (f'OutofTimeFrame_{householdID}'), energyConsumption_AsFloat
 
      ''' 
           Define Reducer Function
